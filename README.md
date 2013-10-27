@@ -23,16 +23,16 @@ Feather.js don't need a CSS file for basic functionnalities. You can look at the
 
 You can use the API as bellow
 
-- .nextSlide(callback) : to the next slide and return the jQuery context
-- .prevSlide(callback) : to the previous slide and return the jQuery context
-- .currentSlide(callback) : return the current jQuery context
+- `.nextSlide(callback)` : to the next slide and return the jQuery context
+- `.prevSlide(callback)` : to the previous slide and return the jQuery context
+- `.currentSlide(callback)` : return the current jQuery context
 
 ###5. Options
 
 | Option | Default | Type | Description
 |-------|--------|-----|-----
-| loop | true | bool |  false for turning off the infinite loop
-| currentItem_class | actual | string | the css class of the current item (usefull for css3 transition :p)
+| `loop` | `true` | bool |  false for turning off the infinite loop
+| `currentItem_class` | `actual` | string | the css class of the current item (usefull for css3 transition :p)
 
 ##Changelog
 
