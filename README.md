@@ -11,7 +11,7 @@ Feather.js is an extremely Flexible and Lightweight (2Kb) Jquery Slider.
 	<script src="jquery.feather.js"></script> ...or	<script src="jquery.feather.min.js"></script>
 
 ###3. CSS
-	Feather.js don't need a CSS file for basic functionnalities. You can look at the demo for more details. 
+Feather.js don't need a CSS file for basic functionnalities. You can look at the demo for more details. 
 
 ###4. Javascript
 
@@ -21,7 +21,7 @@ Feather.js is an extremely Flexible and Lightweight (2Kb) Jquery Slider.
 	    }).data('api_feather');
 	</script>
 
-	You can use the API as bellow
+You can use the API as bellow
 
 - .nextSlide(callback) : to the next slide and return the jQuery context
 - .prevSlide(callback) : to the previous slide and return the jQuery context
@@ -32,7 +32,7 @@ Feather.js is an extremely Flexible and Lightweight (2Kb) Jquery Slider.
 | Option | Default | Type | Description
 |-------|--------|-----|-----
 | loop | true | bool |  false for turning off the infinite loop
-| currentItem_class | actual | string | the css class oof the current item (usefull for css3 transition :p)
+| currentItem_class | actual | string | the css class of the current item (usefull for css3 transition :p)
 
 ##Changelog
 
