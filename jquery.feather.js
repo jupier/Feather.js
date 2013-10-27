@@ -6,12 +6,10 @@
 	*	Default options
 	*/
 	var name = "feather";
-	var version = 0.1;
+	var version = 0.2;
 	var defaults = {
-			/*
-			*	default_css : Bool to use the default css
-			*/
-			default_css : true,
+			loop : true,
+			currentItem_class : 'actual',
 		};
 	var translation = function (self, translate) {
 		self.container.css({
@@ -37,17 +35,19 @@
 		/*
 		*	self.container : the div <ul>...</ul>
 		*/
-		if (self.$el.children('ul').length == 0)
-			throw (name + ' : this current div does not contain any list <ul>...</ul> !');
-		else if (self.$el.children('ul').length > 1)
-			throw (name + ' : this current div does contain only one list <ul>...</ul> !');
 		self.container = self.$el.children('ul');
 		/*
 		*	self.slides : the divs <li>...</li>
 		*/
-		if (self.container.children('li').length == 0)
-			throw (name + ' : this current list does not contain any element <li>...</li> !');
 		self.slides = self.container.children('li');
+		
+		/*********/
+		/*
+		*	self.current_class : class for the current element
+		*/
+		self.current_class = self.settings.currentItem_class;
+		/*********/
+
 		/*
 		*	self.init() : initialize all width
 		*/
@@ -57,7 +57,7 @@
 			clearTimeout($.data(this, 'resizeTimer'));
 		    $.data(this, 'resizeTimer', setTimeout(function() {
 		    	self.resize();
-		    }, 200));
+		    }, 50));
 		});
 
 		return {
@@ -83,11 +83,10 @@
 		/* Set the slides width */
 		self.slides.width(parent_width);
 
-		if (self.settings.default_css)
-			self.defaultCss();
+		self.defaultCss();
 
-		if (self.container.find('.actual').length == 0)
-			self.slides.first().addClass('actual');
+		if (self.container.find('.' + self.current_class).length == 0)
+			self.slides.first().addClass(self.current_class);
 	};
 
 	Feather.prototype.defaultCss = function() {
@@ -96,7 +95,8 @@
 		self.$el.css('overflow', 'hidden');
 
 		self.container.css({'list-style': 'none',
-							'overflow': 'hidden'});
+							'overflow': 'hidden',
+							'padding': '0px'});
 
 		self.slides.css({'float': 'left'});
 	};
@@ -110,26 +110,39 @@
 		var current = self.currentItem();
 
 		/*
+		*	index = index of the current slide
+		*/
+		var index = current.index();
+
+		/*
 		*	next = next slide
 		*/
 		var next = current.next();
-		if (typeof next.html() === 'undefined') next = self.slides.first('li');
+
+		/*
+		*	check the loop
+		*/
+		if (!self.settings.loop && index == (self.container.find('li').length - 1))
+			return null;
+
+		next = (next.length == 0) ? self.slides.first('li') : next;
 
 		/*
 		*	translate = translation of the list
 		*/
-		var translate = 0;
-		if (next.index() != 0)
-			translate = -current.outerWidth(true) * (current.index() + 1);
+		var translate = (next.index() != 0) ? (translate = -current.outerWidth(true) * (index + 1)) : 0;
 		/*
 		*	call the translation's function with the actual context 'self'
 		*/
 		translation(self, translate);
 
-		current.removeClass('actual');
-		next.addClass('actual');
+		current.removeClass(self.current_class);
+		next.addClass(self.current_class);
 
-		(typeof callback !== 'undefined' && typeof callback === 'function') ? callback() : null;
+		/*
+		*	execution of the callback
+		*/
+		(typeof callback === 'function') ? callback() : null;
 
 		return next;
 	};
@@ -141,29 +154,47 @@
 		*	current = current slide
 		*/
 		var current = self.currentItem();
+
+		/*
+		*	index = index of the current slide
+		*/
+		var index = current.index();
+
 		/*
 		*	prev = prev slide
 		*/
 		var prev = current.prev();
-		if (typeof prev.html() === 'undefined') prev = self.slides.last('li');
+
+		/*
+		*	check the loop
+		*/
+		if (!self.settings.loop && index == 0)
+			return null;
+
+		/*
+		*	prev = prev slide
+		*/
+		prev = (prev.length == 0) ? self.slides.last('li') : prev;
 
 		/*
 		*	translate = translation of the list
 		*/
-		var translate = 0;
-		if (prev.index() != 0 && current.index() != 0)
-			translate = -current.outerWidth(true) * (current.index() - 1);
-		else if (current.index() == 0)
-			translate = -current.outerWidth(true) * (self.slides.length - 1);
+		var currenWidth = -current.outerWidth(true);
+		var translate = (prev.index() != 0 && index != 0) ? (currenWidth * (index - 1)) : 0;
+		translate = (index == 0) ? (currenWidth * (self.slides.length - 1)) : translate;
+
 		/*
 		*	call the translation's function with the actual context 'self'
 		*/
 		translation(self, translate);
 
-		current.removeClass('actual');
-		prev.addClass('actual');
+		current.removeClass(self.current_class);
+		prev.addClass(self.current_class);
 
-		(typeof callback !== 'undefined' && typeof callback === 'function') ? callback() : null;
+		/*
+		*	execution of the callback
+		*/
+		(typeof callback === 'function') ? callback() : null;
 
 		return prev;
 	};
@@ -173,39 +204,28 @@
 	*/
 	Feather.prototype.currentItem = function() {
 		var self = this;
+		var current = self.container.find('.' + self.current_class);
 
-				console.log("actual -> " + self.container.find('.actual').length);
-
-		var current = self.slides.first('li');
-		if (self.container.find('.actual').length != 0)
-			current = self.container.find('.actual').first();
-		return current;
+		return (current.length == 0) ? (self.slides.first('li')) : current.first();
 	};
 
 	Feather.prototype.resize = function() {
 		var self = this;
 
+		/*
+		*	self.init() : reinit all width
+		*/
 		self.init();
 
 		var current = self.currentItem();
-
-		console.log("current -> " + current.index());
-
-		if (current.index() != 0)
-		{
-
-			console.log(current.index());
-			var translate = -current.outerWidth(true) * current.index();
-			translation(self, translate);
-		}
+		var index = current.index();
+		(index != 0) ? translation(self, (-current.outerWidth(true) * index)) : null;
 	};
 
 	$.fn.feather = function(options) {
 		return this.each(function() {
-			if (!$.data(this, 'api_' + name)) {
-				$.data(this, 'api_' + name, new Feather(this, options));
-			}
+			var string = 'api_' + name;
+			(!$.data(this, string)) ? ($.data(this, string, new Feather(this, options))) : null;
 		});
 	};
-
 }(jQuery));
