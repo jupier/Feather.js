@@ -1,231 +1,321 @@
 (function($) {
 
-	"use strict";
+        "use strict";
 
-	/*
-	*	Default options
-	*/
-	var name = "feather";
-	var version = 0.2;
-	var defaults = {
-			loop : true,
-			currentItem_class : 'actual',
-		};
-	var translation = function (self, translate) {
-		self.container.css({
-			'-webkit-transform': 'translateX(' + translate + 'px)', 
-			'-moz-transform': 'translateX(' + translate + 'px)', 
-			'-ms-transform': 'translateX(' + translate + 'px)', 
-			'-o-transform': 'translateX(' + translate + 'px)', 
-			'transform': 'translateX(' + translate + 'px)' 
-		});
-	};
+        var version = 0.3;
+        var name = "feather";
 
-	function Feather(el, opts) {
-		var self = this;
+        /*
+        *       Default options
+        */
+        var defaults = {
+            loop : false,
+            visible : 1,
+            fullSliding : false,
+            checkSettings : true,
+            currentItemClass : 'actual',
+        };
 
-		/*
-		*	self.$el : parent div
-		*/
-		self.$el = $(el);
-		/*
-		*	self.settings : global settings
-		*/
-		self.settings = $.extend(defaults, opts);
-		/*
-		*	self.container : the div <ul>...</ul>
-		*/
-		self.container = self.$el.children('ul');
-		/*
-		*	self.slides : the divs <li>...</li>
-		*/
-		self.slides = self.container.children('li');
-		
-		/*********/
-		/*
-		*	self.current_class : class for the current element
-		*/
-		self.current_class = self.settings.currentItem_class;
-		/*********/
+        /*
+        *       Translation function
+        */
+        var translation = function (self, translate) {
+            self.container.css({
+                    '-webkit-transform': 'translateX(' + translate + 'px)', 
+                    '-moz-transform': 'translateX(' + translate + 'px)', 
+                    '-ms-transform': 'translateX(' + translate + 'px)', 
+                    '-o-transform': 'translateX(' + translate + 'px)', 
+                    'transform': 'translateX(' + translate + 'px)' 
+            });
+        };
 
-		/*
-		*	self.init() : initialize all width
-		*/
-		self.init();
+        function Feather(el, opts) {
+                var self = this;
 
-		$(window).on('resize', function() {
-			clearTimeout($.data(this, 'resizeTimer'));
-		    $.data(this, 'resizeTimer', setTimeout(function() {
-		    	self.resize();
-		    }, 50));
-		});
+                /*
+                *        self.$el : parent div
+                */
+                self.$el = $(el);
+                /*
+                *        self.settings : global settings
+                */
+                self.settings = $.extend(defaults, opts);
+                /*
+                *        self.container : the div <ul>...</ul>
+                */
+                self.container = self.$el.children('ul');
+                /*
+                *        self.slides : the divs <li>...</li>
+                */
+                self.slides = self.container.children('li');
+                
+                /*********/
+                /*
+                *        self.current_class : class for the current element
+                */
+                self.current_class = self.settings.currentItemClass;
+                /*********/
 
-		return {
-			nextSlide : function (callback) {
-				return self.next(callback);
-			},
-			prevSlide : function(callback) {
-				return self.prev(callback);
-			},
-			currentSlide : function() {
-				return self.currentItem();
-			},
-		};
-	};
+                /*
+                *        self.checkSettings() : check the settings
+                */
+                (self.settings.checkSettings) ? self.checkSettings() : null;
+                /*
+                *        self.init() : initialize all width
+                */
+                self.init();
 
-	Feather.prototype.init = function() {
-		var self = this;
+                var timerData = self.$el.attr('id') + "_timer";
+                $(window).on('resize', function() {
+                        clearTimeout($.data(this, timerData));
+                    $.data(this, timerData, setTimeout(function() {
+                            self.resize();
+                    }, 50));
+                });
 
-		var parent_width = (self.$el.innerWidth() + 1);
+                return {
+                    /*
+                    *   next : slide to the next item and return the actual current item after the sliding
+                    */
+                    next : function (callback) {
+                        return self.next(callback);
+                    },
+                    /*
+                    *   prev : slide to the previous item and return the actual current item after the sliding
+                    */
+                    prev : function(callback) {
+                        return self.prev(callback);
+                    },
+                    /*
+                    *   currentItem : return the actual current item
+                    */
+                    currentItem : function() {
+                        return self.currentItem();
+                    },
+                    /*
+                    *   nextItem : return the next item compared to the actual current item
+                    */
+                    nextItem : function() {
+                        return self.nextItem();
+                    },
+                    /*
+                    *   prevItem : return the previous item compared to the actual current item
+                    */
+                    prevItem : function() {
+                        return self.prevItem();
+                    },
+                };
+        };
 
-		/* Set the container width */
-		self.container.width(parent_width * self.slides.length);
-		/* Set the slides width */
-		self.slides.width(parent_width);
+        Feather.prototype.init = function() {
+                var self = this;
 
-		self.defaultCss();
+                var parent_width = (self.$el.innerWidth() + 1);
 
-		if (self.container.find('.' + self.current_class).length == 0)
-			self.slides.first().addClass(self.current_class);
-	};
+                /* Set the container width */
+                self.container.width(parent_width * self.slides.length);
+                /* Set the slides width */
+                self.slides.width(parent_width / self.settings.visible);
 
-	Feather.prototype.defaultCss = function() {
-		var self = this;
+                self.defaultCss();
 
-		self.$el.css('overflow', 'hidden');
+                if (self.container.find('.' + self.current_class).length == 0)
+                        self.slides.first().addClass(self.current_class);
+        };
 
-		self.container.css({'list-style': 'none',
-							'overflow': 'hidden',
-							'padding': '0px'});
+        Feather.prototype.checkSettings = function() {
+            var self = this;
 
-		self.slides.css({'float': 'left'});
-	};
+            if (self.settings.fullSliding && (self.container.find('li').length % self.settings.visible) != 0)
+                throw "Feather.js : The number of items in the list should be a multiple of the number of visible items. You can use the option 'checkSettings' to pass this check."
+        };
 
-	Feather.prototype.next = function(callback) {
-		var self = this;
+        Feather.prototype.defaultCss = function() {
+                var self = this;
 
-		/*
-		*	current = current slide
-		*/
-		var current = self.currentItem();
+                self.$el.css('overflow', 'hidden');
 
-		/*
-		*	index = index of the current slide
-		*/
-		var index = current.index();
+                self.container.css({'list-style': 'none',
+                                    'overflow': 'hidden',
+                                    'padding': '0px'});
 
-		/*
-		*	next = next slide
-		*/
-		var next = current.next();
+                self.slides.css({'float': 'left'});
+        };
 
-		/*
-		*	check the loop
-		*/
-		if (!self.settings.loop && index == (self.container.find('li').length - 1))
-			return null;
+        /*
+        *        currentItem : return the current item
+        */
+        Feather.prototype.currentItem = function() {
+                var self = this;
+                var current = self.container.find('.' + self.current_class);
 
-		next = (next.length == 0) ? self.slides.first('li') : next;
+                return (current.length == 0) ? (self.slides.first('li')) : current.first();
+        };
 
-		/*
-		*	translate = translation of the list
-		*/
-		var translate = (next.index() != 0) ? (translate = -current.outerWidth(true) * (index + 1)) : 0;
-		/*
-		*	call the translation's function with the actual context 'self'
-		*/
-		translation(self, translate);
+        /*
+        *        nextItem : return the next item compared to the current item
+        */
+        Feather.prototype.nextItem = function() {
+                var self = this;
 
-		current.removeClass(self.current_class);
-		next.addClass(self.current_class);
+                /*
+                *        current = current slide
+                */
+                var current = self.currentItem();
 
-		/*
-		*	execution of the callback
-		*/
-		(typeof callback === 'function') ? callback() : null;
+                /*
+                *        index = index of the current slide
+                */
+                var index = current.index();
 
-		return next;
-	};
+                /*
+                *        next = next slide
+                */
+                var indexNext = (!self.settings.fullSliding) ? (index + 1) : (index + self.settings.visible);
+                var next = self.container.find('li:nth-child(' + (indexNext + 1) + ')');
 
-	Feather.prototype.prev = function(callback) {
-		var self = this;
+                /*
+                *        check the loop
+                */
+                var lastItem = (index + self.settings.visible - 1) == (self.container.find('li').length - 1);
+                if (!self.settings.loop && lastItem)
+                    return null;
 
-		/*
-		*	current = current slide
-		*/
-		var current = self.currentItem();
+                next = (next.length == 0 || lastItem) ? self.slides.first('li') : next;
 
-		/*
-		*	index = index of the current slide
-		*/
-		var index = current.index();
+                return {
+                    next : next,
+                    nextIndex : next.index(),
+                    current : current,
+                    currentIndex : current.index(),
+                };
 
-		/*
-		*	prev = prev slide
-		*/
-		var prev = current.prev();
+        };
 
-		/*
-		*	check the loop
-		*/
-		if (!self.settings.loop && index == 0)
-			return null;
+        /*
+        *   next : sliding to the next item
+        */
+        Feather.prototype.next = function(callback) {
+                var self = this;
 
-		/*
-		*	prev = prev slide
-		*/
-		prev = (prev.length == 0) ? self.slides.last('li') : prev;
+                /*
+                *        nextObj = object with the current item and the next item
+                */
+                var nextObj = self.nextItem();
+                if (nextObj == null) return null;
 
-		/*
-		*	translate = translation of the list
-		*/
-		var currenWidth = -current.outerWidth(true);
-		var translate = (prev.index() != 0 && index != 0) ? (currenWidth * (index - 1)) : 0;
-		translate = (index == 0) ? (currenWidth * (self.slides.length - 1)) : translate;
+                /*
+                *        translate = translation of the list
+                */
+                var translate = (nextObj.nextIndex != 0) ? (-nextObj.current.outerWidth(true) * nextObj.nextIndex) : 0;
+                /*
+                *        call the translation's function with the actual context 'self'
+                */
+                translation(self, translate);
 
-		/*
-		*	call the translation's function with the actual context 'self'
-		*/
-		translation(self, translate);
+                nextObj.current.removeClass(self.current_class);
+                nextObj.next.addClass(self.current_class);
 
-		current.removeClass(self.current_class);
-		prev.addClass(self.current_class);
+                /*
+                *        execution of the callback
+                */
+                (typeof callback === 'function') ? callback() : null;
 
-		/*
-		*	execution of the callback
-		*/
-		(typeof callback === 'function') ? callback() : null;
+                return nextObj.next;
+        };
 
-		return prev;
-	};
+        /*
+        *         : return the previous item compared to the current item
+        */
+        Feather.prototype.prevItem = function() {
+                var self = this;
 
-	/*
-	*	current : return the current item <li>...</li>
-	*/
-	Feather.prototype.currentItem = function() {
-		var self = this;
-		var current = self.container.find('.' + self.current_class);
+                /*
+                *        current = current slide
+                */
+                var current = self.currentItem();
 
-		return (current.length == 0) ? (self.slides.first('li')) : current.first();
-	};
+                /*
+                *        index = index of the current slide
+                */
+                var index = current.index();
 
-	Feather.prototype.resize = function() {
-		var self = this;
+                /*
+                *        prev = prev slide
+                */
+                var indexPrev = (!self.settings.fullSliding) ? (index) : (index + 1 - self.settings.visible);
+                var prev = self.container.find('li:nth-child(' + (indexPrev) + ')');
 
-		/*
-		*	self.init() : reinit all width
-		*/
-		self.init();
+                /*
+                *        check the loop
+                */
+                if (!self.settings.loop && index == 0)
+                    return null;
 
-		var current = self.currentItem();
-		var index = current.index();
-		(index != 0) ? translation(self, (-current.outerWidth(true) * index)) : null;
-	};
+                /*
+                *        check if the current element is not the first
+                */
+                if (prev.length == 0)
+                {
+                    indexPrev = self.slides.last('li').index() - self.settings.visible + 1;
+                    prev = self.container.find('li:nth-child(' + (indexPrev + 1) + ')');
+                }
 
-	$.fn.feather = function(options) {
-		return this.each(function() {
-			var string = 'api_' + name;
-			(!$.data(this, string)) ? ($.data(this, string, new Feather(this, options))) : null;
-		});
-	};
+                return {
+                    current : current,
+                    prev : prev,
+                };
+        };
+
+        /*
+        *   prev : sliding to the previous item
+        */
+        Feather.prototype.prev = function(callback) {
+                var self = this;
+
+                var prevObj = this.prevItem();
+                if (prevObj == null) return null;
+
+                /*
+                *        translate = translation of the list
+                */
+                var currentWidth = -prevObj.current.outerWidth(true);
+                var translate = (prevObj.prev.index() != 0 && prevObj.current.index() != 0) ? (currentWidth * prevObj.prev.index()) : 0;
+                translate = (prevObj.current.index() == 0) ? (currentWidth * (prevObj.prev.index())) : translate;
+
+                /*
+                *        call the translation's function with the actual context 'self'
+                */
+                translation(self, translate);
+
+                prevObj.current.removeClass(self.current_class);
+                prevObj.prev.addClass(self.current_class);
+
+                /*
+                *        execution of the callback
+                */
+                (typeof callback === 'function') ? callback() : null;
+
+                return prevObj.prev;
+        };
+
+        Feather.prototype.resize = function() {
+                var self = this;
+
+                /*
+                *        self.init() : reinit all width
+                */
+                self.init();
+
+                var current = self.currentItem();
+                var index = current.index();
+                (index != 0) ? translation(self, (-current.outerWidth(true) * index)) : null;
+        };
+
+        $.fn.feather = function(options) {
+                return this.each(function() {
+                        var data = $(this).attr('id') + "_api";
+                        (!$.data(this, data)) ? ($.data(this, data, new Feather(this, options))) : null;
+                });
+        };
 }(jQuery));
